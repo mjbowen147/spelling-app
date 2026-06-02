@@ -137,18 +137,27 @@ export default function App() {
     setIsSpinning(true);
     setSelectedSpinWord(null);
     
-    const extraSpins = 3 * 360; // 3 full extra rotations
+    const extraSpins = 5 * 360; // 5 full extra rotations for dramatic effect
     const randomSegment = Math.floor(Math.random() * spinWords.length);
     const segmentAngle = 360 / spinWords.length;
-    // Calculate rotation so that the chosen segment ends up at the top (270 degrees on a standard circle, but here we can just align it)
-    const targetRotation = spinRotation + extraSpins + (360 - (randomSegment * segmentAngle));
+    const midAngle = (randomSegment * segmentAngle) + (segmentAngle / 2);
+    
+    // We want the selected segment's midAngle to stop at 180 degrees (LEFT).
+    const currentMod = spinRotation % 360;
+    let targetMod = 180 - midAngle;
+    if (targetMod < 0) targetMod += 360;
+    
+    let rotationNeeded = targetMod - currentMod;
+    if (rotationNeeded < 0) rotationNeeded += 360;
+    
+    const targetRotation = spinRotation + extraSpins + rotationNeeded;
     
     setSpinRotation(targetRotation);
     
     setTimeout(() => {
       setIsSpinning(false);
       setSelectedSpinWord(spinWords[randomSegment]);
-    }, 3000); // 3 seconds for animation
+    }, 4000); // 4 seconds for animation
   };
 
   const handleUnderstand = () => {
@@ -250,6 +259,9 @@ function ConfigPhase({
   const tabs = ['Year 1', 'Year 2', 'Year 3/4', 'Year 5/6', 'Custom'];
   const sets = [1, 2, 3, 4, 5, 6, 7, 8];
 
+  const previewWords = wordLists[yearGroup] ? wordLists[yearGroup][selectedSet] : [];
+  const previewText = previewWords?.length > 0 ? previewWords.join(', ') : 'No words found for this set.';
+
   return (
     <div className="w-full bg-white/70 backdrop-blur-md shadow-xl rounded-3xl p-6 md:p-10 flex flex-col gap-8 border border-white/50">
       
@@ -259,10 +271,10 @@ function ConfigPhase({
           <button
             key={tab}
             onClick={() => setYearGroup(tab)}
-            className={`px-5 py-3 rounded-xl font-bold text-lg transition-all duration-300 shadow-sm ${
+            className={`px-6 py-3 rounded-xl font-bold text-lg sm:text-xl transition-all duration-300 shadow-sm ${
               yearGroup === tab 
-                ? 'bg-blue-500 text-white shadow-blue-500/30 scale-105' 
-                : 'bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-500'
+                ? 'bg-[#475b7a] text-white shadow-md' 
+                : 'bg-[#89a8c7] text-white hover:bg-[#7897b6]'
             }`}
           >
             {tab}
@@ -271,39 +283,60 @@ function ConfigPhase({
       </div>
 
       {/* Set Selection / Custom Input */}
-      <div className="flex flex-col items-center bg-blue-50/50 p-6 rounded-2xl">
-        <h2 className="text-xl font-bold text-gray-700 mb-4">
-          {yearGroup === 'Custom' ? 'Enter Custom Words' : 'Select a Spelling Set'}
-        </h2>
-        
+      <div className="flex flex-col items-center bg-transparent w-full">
         {yearGroup === 'Custom' ? (
-          <textarea 
-            className="w-full max-w-2xl h-32 p-4 rounded-xl border-2 border-blue-200 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:outline-none transition-all resize-none shadow-inner"
-            placeholder="e.g. apple, banana, orange..."
-            value={customWordsInput}
-            onChange={(e) => setCustomWordsInput(e.target.value)}
-          />
+          <div className="w-full flex flex-col items-center gap-4 bg-blue-50/50 p-6 rounded-2xl">
+            <h2 className="text-xl font-bold text-gray-700">Enter Custom Words</h2>
+            <textarea 
+              className="w-full max-w-2xl h-32 p-4 rounded-xl border-2 border-blue-200 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:outline-none transition-all resize-none shadow-inner"
+              placeholder="e.g. apple, banana, orange..."
+              value={customWordsInput}
+              onChange={(e) => setCustomWordsInput(e.target.value)}
+            />
+            <button 
+              onClick={onPlay}
+              className="mt-4 bg-[#5cb85c] hover:bg-[#4cae4c] text-white px-10 py-4 rounded-xl font-bold text-2xl shadow-md transition-all w-full max-w-2xl"
+            >
+              Play
+            </button>
+          </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full max-w-2xl">
-            {sets.map(set => (
-              <button
-                key={set}
-                onClick={() => setSelectedSet(set)}
-                className={`py-4 rounded-2xl font-bold text-lg transition-all duration-300 border-2 ${
-                  selectedSet === set 
-                    ? 'border-green-500 bg-green-500 text-white shadow-lg shadow-green-500/40 scale-105' 
-                    : 'border-transparent bg-white text-gray-600 hover:border-green-300 hover:shadow-md'
-                }`}
+          <div className="flex flex-col md:flex-row gap-4 w-full max-w-5xl justify-center items-stretch">
+            {/* Left Column: Set Buttons */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full md:w-1/2 content-start">
+              {sets.map(set => (
+                <button
+                  key={set}
+                  onClick={() => setSelectedSet(set)}
+                  className={`py-4 px-2 rounded-xl font-bold text-lg transition-all duration-200 ${
+                    selectedSet === set 
+                      ? 'bg-[#475b7a] text-white shadow-md' 
+                      : 'bg-[#89a8c7] text-white hover:bg-[#7897b6] hover:shadow-sm'
+                  }`}
+                >
+                  Set {set}
+                </button>
+              ))}
+            </div>
+            
+            {/* Right Column: Word Preview Box */}
+            <div className="w-full md:w-1/2 bg-[#475b7a] rounded-xl p-6 flex flex-col justify-between shadow-lg min-h-[280px]">
+              <div className="text-white text-xl sm:text-2xl font-bold leading-relaxed font-sans mb-6 text-left">
+                {previewText}
+              </div>
+              <button 
+                onClick={onPlay}
+                className="w-full bg-[#64a956] hover:bg-[#569849] text-white py-4 rounded-xl font-bold text-2xl shadow-md transition-all mt-auto"
               >
-                Set {set}
+                Play
               </button>
-            ))}
+            </div>
           </div>
         )}
       </div>
 
       {/* Settings */}
-      <div className="flex flex-col md:flex-row gap-8 justify-center items-center">
+      <div className="flex flex-col md:flex-row gap-8 justify-center items-center mt-4">
         <div className="flex flex-col items-center gap-2">
           <label className="font-bold text-gray-600 text-sm uppercase tracking-wider">Words per game</label>
           <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100">
@@ -329,19 +362,6 @@ function ConfigPhase({
           </button>
         </div>
       </div>
-
-      {/* Play Button */}
-      <div className="flex justify-center mt-4">
-        <button 
-          onClick={onPlay}
-          className="group relative flex items-center gap-3 bg-gradient-to-r from-blue-500 to-green-400 text-white px-10 py-5 rounded-full font-extrabold text-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-white/20 w-full transform -skew-x-12 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
-          <Play size={28} fill="currentColor" />
-          LET'S PLAY!
-        </button>
-      </div>
-
     </div>
   );
 }
@@ -360,76 +380,105 @@ function SpinPhase({ spinWords, isSpinning, spinRotation, selectedSpinWord, onSp
   };
 
   return (
-    <div className="w-full flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-500">
-      
-      {!selectedSpinWord ? (
-        <>
-          <h2 className="text-2xl font-bold text-gray-700 mb-2">Spin the Wheel!</h2>
-          <div className="relative w-72 h-72 sm:w-96 sm:h-96 drop-shadow-2xl">
-            {/* Pointer */}
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[30px] border-t-gray-800 z-10 drop-shadow-md"></div>
-            
-            {/* Wheel */}
-            <div 
-              className="w-full h-full rounded-full overflow-hidden border-8 border-white shadow-inner bg-gray-100"
-              style={{ 
-                transform: `rotate(${spinRotation}deg)`, 
-                transition: isSpinning ? 'transform 3s cubic-bezier(0.25, 0.1, 0.15, 1)' : 'none'
-              }}
-            >
-              <svg viewBox="-100 -100 200 200" className="w-full h-full transform -rotate-90">
-                {numSegments === 1 ? (
-                  <circle cx="0" cy="0" r="100" fill={colors[0]} />
-                ) : (
-                  spinWords.map((wordObj, i) => {
-                    const startPercent = i / numSegments;
-                    const endPercent = (i + 1) / numSegments;
-                    const [startX, startY] = getCoordinatesForPercent(startPercent);
-                    const [endX, endY] = getCoordinatesForPercent(endPercent);
-                    
-                    // If segment is > 50%, large arc flag is 1
-                    const largeArcFlag = endPercent - startPercent > 0.5 ? 1 : 0;
-                    const pathData = [
-                      `M 0 0`,
-                      `L ${startX} ${startY}`,
-                      `A 100 100 0 ${largeArcFlag} 1 ${endX} ${endY}`,
-                      `Z`,
-                    ].join(' ');
+    <div className="w-full flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-500 relative">
+      <h2 className="text-3xl font-extrabold text-gray-700 mb-2 drop-shadow-sm">Spin the Wheel!</h2>
+      <p className="text-gray-500 font-medium mb-4">Words remaining: {numSegments}</p>
 
-                    return (
-                      <path key={wordObj.word} d={pathData} fill={colors[i % colors.length]} stroke="white" strokeWidth="1" />
-                    );
-                  })
-                )}
-              </svg>
+      <div className="relative w-72 h-72 sm:w-96 sm:h-96 drop-shadow-2xl">
+        {/* Pointer on the Left */}
+        <div className="absolute top-1/2 -left-6 -translate-y-1/2 w-0 h-0 border-y-[15px] border-y-transparent border-l-[30px] border-l-gray-800 z-20 drop-shadow-lg"></div>
+        
+        {/* Wheel */}
+        <div 
+          className="w-full h-full rounded-full overflow-hidden border-8 border-white shadow-[0_0_20px_rgba(0,0,0,0.2)] bg-gray-100"
+          style={{ 
+            transform: `rotate(${spinRotation}deg)`, 
+            transition: isSpinning ? 'transform 4s cubic-bezier(0.1, 0.7, 0.1, 1)' : 'transform 0.5s ease-in-out'
+          }}
+        >
+          <svg viewBox="-100 -100 200 200" className="w-full h-full">
+            {numSegments === 1 ? (
+              <g>
+                <circle cx="0" cy="0" r="100" fill={colors[0]} />
+                <text 
+                  x="-85" 
+                  y="0" 
+                  transform="rotate(180)" 
+                  dominantBaseline="middle" 
+                  textAnchor="start" 
+                  fill="white" 
+                  fontSize="12"
+                  fontWeight="bold"
+                >
+                  {spinWords[0].word}
+                </text>
+              </g>
+            ) : (
+              spinWords.map((wordObj, i) => {
+                const startPercent = i / numSegments;
+                const endPercent = (i + 1) / numSegments;
+                const [startX, startY] = getCoordinatesForPercent(startPercent);
+                const [endX, endY] = getCoordinatesForPercent(endPercent);
+                
+                const largeArcFlag = endPercent - startPercent > 0.5 ? 1 : 0;
+                const pathData = [
+                  `M 0 0`,
+                  `L ${startX} ${startY}`,
+                  `A 100 100 0 ${largeArcFlag} 1 ${endX} ${endY}`,
+                  `Z`,
+                ].join(' ');
+
+                const midAngle = ((startPercent + endPercent) / 2) * 360;
+
+                return (
+                  <g key={wordObj.word}>
+                    <path d={pathData} fill={colors[i % colors.length]} stroke="white" strokeWidth="1" />
+                    <g transform={`rotate(${midAngle})`}>
+                      <text 
+                        x="-85" 
+                        y="0" 
+                        transform="rotate(180)" 
+                        dominantBaseline="middle" 
+                        textAnchor="start" 
+                        fill="white" 
+                        fontSize={numSegments > 15 ? "6" : numSegments > 10 ? "8" : "12"}
+                        fontWeight="bold"
+                        style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.5)' }}
+                      >
+                        {wordObj.word}
+                      </text>
+                    </g>
+                  </g>
+                );
+              })
+            )}
+          </svg>
+        </div>
+
+        {/* Center Button */}
+        <button 
+          onClick={onSpin}
+          disabled={isSpinning || numSegments === 0}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-full shadow-xl border-4 border-gray-100 flex items-center justify-center font-extrabold text-blue-600 text-lg sm:text-xl hover:scale-110 hover:shadow-2xl active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-xl z-20"
+        >
+          SPIN
+        </button>
+      </div>
+
+      {/* Selected Word Overlay (Magnified/Eliminate) */}
+      {selectedSpinWord && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-md rounded-3xl animate-in zoom-in duration-300">
+          <div className="w-full max-w-sm bg-white rounded-3xl p-8 shadow-2xl border-4 border-blue-200 flex flex-col items-center gap-6 transform transition-all scale-110">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 px-8 py-6 rounded-2xl w-full text-center shadow-inner">
+              <h3 className="text-4xl sm:text-5xl font-black text-blue-600 tracking-wider break-all drop-shadow-sm">{selectedSpinWord.word}</h3>
             </div>
-
-            {/* Center Button */}
             <button 
-              onClick={onSpin}
-              disabled={isSpinning || numSegments === 0}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-white rounded-full shadow-lg border-4 border-gray-100 flex items-center justify-center font-extrabold text-blue-500 hover:scale-110 active:scale-95 transition-transform disabled:opacity-50 disabled:hover:scale-100"
+              onClick={onUnderstand}
+              className="mt-4 flex items-center justify-center w-full gap-2 bg-red-500 text-white px-8 py-4 rounded-xl font-bold text-xl hover:bg-red-600 hover:shadow-lg transition-all active:scale-95"
             >
-              SPIN
+              Eliminate
             </button>
           </div>
-          <p className="text-gray-500 font-medium mt-4">Words remaining: {numSegments}</p>
-        </>
-      ) : (
-        <div className="w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl border-2 border-blue-100 flex flex-col items-center gap-6 animate-in slide-in-from-bottom-8 duration-500">
-          <div className="bg-blue-50 px-8 py-4 rounded-2xl w-full text-center">
-            <h3 className="text-5xl font-black text-blue-600 tracking-wider break-all">{selectedSpinWord.word}</h3>
-          </div>
-          <p className="text-xl text-gray-600 font-medium text-center italic">
-            "{selectedSpinWord.sentence}"
-          </p>
-          <button 
-            onClick={onUnderstand}
-            className="mt-4 flex items-center gap-2 bg-green-500 text-white px-8 py-4 rounded-xl font-bold text-xl hover:bg-green-600 hover:shadow-lg transition-all active:scale-95"
-          >
-            <CheckCircle2 size={24} />
-            I Understand!
-          </button>
         </div>
       )}
     </div>
