@@ -1,12 +1,22 @@
-﻿# Dependencies and temporary files
+﻿# Dependencies and virtual environments
 node_modules/
 venv/
+.venv/
+env/
 .env
+.env.*
 *.pyc
 __pycache__/
 .DS_Store
 dist/
 build/
+
+# Secrets, credentials & tokens
+credentials.json
+token.json
+client_secret*.json
+*.pem
+*.key
 
 # Documents & Data
 *.pdf
@@ -21,6 +31,9 @@ build/
 *.7z
 *.rar
 *.tar.gz
+*.mbox
+*.iso
+*.dmg
 
 # Media (Moving to OneDrive instead)
 *.jpg
@@ -32,6 +45,7 @@ build/
 *.mp4
 *.mov
 *.avi
+*.wmv
 *.mp3
 *.m4a
 *.wav
