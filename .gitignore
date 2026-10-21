@@ -18,7 +18,7 @@ client_secret*.json
 *.pem
 *.key
 
-# Documents & Data
+# Documents & Data (Reports, metadata dumps, logs)
 *.pdf
 *.docx
 *.doc
@@ -34,6 +34,9 @@ client_secret*.json
 *.mbox
 *.iso
 *.dmg
+*.txt
+*.json
+*.log
 
 # Media (Moving to OneDrive instead)
 *.jpg
@@ -54,3 +57,6 @@ client_secret*.json
 
 # Project Specific
 Exam Papers/
+Book*/
+*Audiobook*/
+Harry_Potter_Audiobook/
